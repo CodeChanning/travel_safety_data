@@ -1,0 +1,132 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Bicycle Theft in London – Leaflet Heatmap Template</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tachyons/4.11.1/tachyons.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.0/papaparse.min.js"></script>
+
+</head>
+
+<body class="helvetica">
+
+  <div id="map" class="vh-100 vw-100 bg-near-white"></div>
+  
+  <!-- Summary or title box
+  <div id="legend" class="bg-white fixed top-0 left-0 pa2 mt2 mb2 ml2 br1 o-90" style="z-index: 1000; width: 380px">
+    <h1 class="f3 mt0">Bicycle Theft in London oi govnah</h1> 
+
+    <p class="measure mb1">
+      This heatmap shows hotspots of bicycle theft in London
+      in January–July 2020 according to the Metropolitan Police data.
+    </p>
+
+  </div>
+  -->
+
+  <script>
+
+    //Making base map
+    var map = L.map('map', {
+      zoomControl: false, // Add zoom control separately below
+      center: [26.071361, -80.140778], // Initial map center
+      zoom: 17, // Initial zoom level
+      maxZoom: 17.5,
+      attributionControl: false, // Instead of default attribution, we add custom at the bottom of script
+      scrollWheelZoom: true
+    })
+
+    // Add zoom in/out buttons to the top-right
+    L.control.zoom({position: 'topright'}).addTo(map)
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	    maxZoom: 19,
+	    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    //Add geographical labels only layer on top of baselayer
+    /*var labels = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 30,
+      //tileSize: 10,
+      pane: 'shadowPane'  // always display on top
+    }).addTo(map)*/
+
+    // Read data from CSV file
+    $.get('https://raw.githubusercontent.com/CodeChanning/travel_safety_data/main/demo_data.csv', function(csvString) {
+
+      // Use PapaParse to transform file into arrays
+      var data = Papa.parse(csvString.trim()).data.filter(
+        function(row) { return row.length === 3 }
+      ).map(function(a) {
+        console.log(" hello " + parseFloat(a[2]) + " ");
+         
+        return [parseFloat(a[0]), parseFloat(a[1]), parseFloat(a[2])]
+        
+      })
+      
+      //adding icon for marker
+      var dotIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/CodeChanning/stem_map/gh-pages/_layouts/dot.png',
+        iconSize: [10, 10]
+      });
+
+      //adding markers for every area that displays the density for that place
+      console.log(data[1]);
+      for(var i = 0;  i < data.length; i++){
+        var latlng = new L.LatLng(data[i][0], data[i][1]);
+        console.log(i, data[i]);
+
+        var marker = L.marker(latlng, {icon: dotIcon}).addTo(map);
+        marker.bindPopup("Area Density: " + data[i][2] + "");
+      } 
+      console.log(data[0]);
+      
+      var max = 1.1;
+      var mid = max / 2;
+      // Add all points into a heat layer
+      var heat = L.heatLayer(data, {
+        max: max,
+        radius: 20,
+        blur: 3,
+        gradient: {1.0:'yellow'}
+      })
+
+      // Add the heatlayer to the map
+      heat.addTo(map)
+    })
+    
+    //Displays popup wherever the user clicks
+    console.log(popup.getLatLng());
+    map.on('click', function(e) {        
+        var popLocation= e.latlng;
+
+        console.log(map.getZoom())
+        var popup = L.popup()
+        .setLatLng(popLocation)
+        .setContent("does this work?")
+        .openOn(map);        
+    });
+
+    // Add custom attribution
+    L.control.attribution({
+      prefix: '<a href="https://github.com/HandsOnDataViz/leaflet-heatmap">View data and code</a> \
+        by <a href="https://handsondataviz.org" target="_blank">HandsOnDataViz</a>'
+    }).addTo(map)
+
+  </script>
+
+</body>
+
+</html>
